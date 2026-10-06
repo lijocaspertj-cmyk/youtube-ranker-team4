@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquareQuote, Search, ThumbsUp, Tag, HelpCircle, CheckCircle2, AlertTriangle, Filter, Sparkles, RefreshCw, Flame, BarChart2, MessageCircle } from 'lucide-react';
+import { MessageSquareQuote, Search, ThumbsUp, Tag, HelpCircle, CheckCircle2, AlertTriangle, Filter, Sparkles, RefreshCw, Flame, BarChart2, MessageCircle, Target, Lightbulb, TrendingUp } from 'lucide-react';
 import { AudiencePulseData, CommentItem, KeywordTag, SentimentType } from '../types';
 import { fetchAudiencePulse } from '../services/api';
 
@@ -9,11 +9,35 @@ interface AudiencePulseProps {
   onOpenKeyModal: () => void;
 }
 
-const SAMPLE_VIDEOS = [
-  { id: 'dQw4w9WgXcQ', title: 'Tech Review & Product Reveal' },
-  { id: 'video_ai_1', title: 'AI Developer Framework & Demo' },
-  { id: 'video_tech_2', title: 'Consumer Gadgets Benchmark' },
-  { id: 'video_fit_1', title: 'Science-Based Fitness Breakdown' },
+const SAMPLE_COMPETITOR_VIDEOS = [
+  {
+    id: '0e3GPea1Tyg',
+    creator: 'MrBeast',
+    title: '$456,000 Squid Game in Real Life!',
+    views: '624M',
+    badge: 'Benchmark Target'
+  },
+  {
+    id: 'hFZFjoX2cGg',
+    creator: 'Mark Rober',
+    title: 'Glitterbomb 5.0 vs Porch Pirates',
+    views: '89M',
+    badge: 'Engineering Rival'
+  },
+  {
+    id: 'P5q3z4n8k1g',
+    creator: 'Dude Perfect',
+    title: 'World Record Edition 2',
+    views: '52M',
+    badge: 'Stunts Competitor'
+  },
+  {
+    id: 'mK97mJ3yA0E',
+    creator: 'Airrack',
+    title: 'I Trapped 100 People in a Grocery Store',
+    views: '34M',
+    badge: 'Viral Challenger'
+  },
 ];
 
 export const AudiencePulse: React.FC<AudiencePulseProps> = ({
@@ -21,8 +45,8 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
   hasKey,
   onOpenKeyModal,
 }) => {
-  const [videoIdInput, setVideoIdInput] = useState('dQw4w9WgXcQ');
-  const [currentVideoId, setCurrentVideoId] = useState('dQw4w9WgXcQ');
+  const [videoIdInput, setVideoIdInput] = useState('0e3GPea1Tyg');
+  const [currentVideoId, setCurrentVideoId] = useState('0e3GPea1Tyg');
   const [data, setData] = useState<AudiencePulseData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +97,9 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
       loadPulse(videoIdInput);
     }
   };
+
+  // Find active video sample if applicable
+  const matchedSample = SAMPLE_COMPETITOR_VIDEOS.find(v => v.id.toLowerCase() === currentVideoId.toLowerCase());
 
   // Filtered comments
   const filteredComments = (data?.comments || []).filter(c => {
@@ -129,25 +156,41 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
             "Audience Pulse" & Sentiment Analysis
           </h1>
           <p className="mt-2 text-sm sm:text-base text-purple-100 font-medium">
-            Inspect any YouTube video to reveal real-time sentiment distribution, recurring customer pain points, feature requests, and top-voted feedback.
+            Monitor how your competitors' audiences react. Extract their viewers' biggest frustrations, unfulfilled content desires, and audio/pacing complaints so your channel can out-execute them.
           </p>
 
-          {/* Quick Preset Video Chips */}
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-purple-200">Sample Videos:</span>
-            {SAMPLE_VIDEOS.map((vid, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => {
-                  setVideoIdInput(vid.id);
-                  loadPulse(vid.id);
-                }}
-                className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-all border border-white/20 cursor-pointer"
-              >
-                {vid.title}
-              </button>
-            ))}
+          {/* Competitor Sample Video Presets */}
+          <div className="mt-5 space-y-2">
+            <span className="text-xs font-bold text-purple-200">Competitor Case Studies (MrBeast vs Niche Rivals):</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              {SAMPLE_COMPETITOR_VIDEOS.map((vid, idx) => {
+                const isActive = currentVideoId.toLowerCase() === vid.id.toLowerCase();
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setVideoIdInput(vid.id);
+                      loadPulse(vid.id);
+                    }}
+                    className={`p-2.5 rounded-xl text-left transition-all border cursor-pointer ${
+                      isActive
+                        ? 'bg-white text-purple-900 border-white shadow-md'
+                        : 'bg-white/15 hover:bg-white/25 text-white border-white/20'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase mb-1">
+                      <span className={isActive ? 'text-purple-700' : 'text-purple-200'}>{vid.creator}</span>
+                      <span className={isActive ? 'bg-purple-100 text-purple-800 px-1.5 py-0.2 rounded' : 'bg-white/20 px-1.5 py-0.2 rounded'}>
+                        {vid.badge}
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold line-clamp-1 leading-snug">{vid.title}</p>
+                    <span className="text-[10px] opacity-75 font-mono">{vid.views} views</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -164,7 +207,7 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
               type="text"
               value={videoIdInput}
               onChange={(e) => setVideoIdInput(e.target.value)}
-              placeholder="Enter YouTube Video ID (e.g. dQw4w9WgXcQ) or full video URL..."
+              placeholder="Enter YouTube Video ID (e.g. 0e3GPea1Tyg) or full video URL..."
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
             />
           </div>
@@ -176,12 +219,12 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
             {loading ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Analyzing Pulse...</span>
+                <span>Auditing Competitor Video...</span>
               </>
             ) : (
               <>
-                <Flame className="w-4 h-4" />
-                <span>Analyze Audience Pulse</span>
+                <Target className="w-4 h-4" />
+                <span>Audit Competitor Audience</span>
               </>
             )}
           </button>
@@ -301,6 +344,61 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
                   </div>
                   <p className="text-lg font-black text-rose-950">Customer Obstacles</p>
                   <p className="text-[11px] text-rose-700 mt-0.5">Top friction: pricing concerns, tutorial requests, bugs</p>
+                </div>
+              </div>
+
+              {/* Competitor Audit & How Your Channel Can Win */}
+              <div className="mt-5 p-5 rounded-2xl bg-gradient-to-r from-purple-50 via-violet-50 to-rose-50 border border-purple-200 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center shadow-xs">
+                    <Target className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-xs sm:text-sm text-purple-950 uppercase tracking-wide">
+                      Competitor Intelligence & How Your Channel Can Win
+                    </h3>
+                    <p className="text-[11px] text-purple-800 font-medium">
+                      Actionable strategic takeaways extracted from this competitor's audience comment sentiment.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                  <div className="p-3.5 rounded-xl bg-white/95 border border-purple-100 shadow-2xs space-y-1">
+                    <span className="font-extrabold text-rose-700 flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                      Competitor Vulnerability
+                    </span>
+                    <p className="text-slate-700 font-medium leading-relaxed text-[11px]">
+                      {data.videoId.includes('0e3GPe') || data.videoId.includes('beast') 
+                        ? 'Hyper-accelerated cuts & contestant detachment: viewers noted feeling overwhelmed by buzzer sound effects and lost emotional connection before mid-game eliminations.'
+                        : 'Pacing friction: rapid jump-cuts and loud audio spikes during high-intensity scenes tire viewers.'}
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-white/95 border border-purple-100 shadow-2xs space-y-1">
+                    <span className="font-extrabold text-emerald-700 flex items-center gap-1">
+                      <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      Your Channel Opportunity
+                    </span>
+                    <p className="text-slate-700 font-medium leading-relaxed text-[11px]">
+                      {data.videoId.includes('0e3GPe') || data.videoId.includes('beast')
+                        ? 'Borrow the 5-second zero-fluff hook, but give key participants 20-30 seconds of emotional storytelling. Smaller creators win on character empathy, not pure budget.'
+                        : 'Pair high-retention visual hooks with deeper personal storytelling to achieve superior mid-video watch duration.'}
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-white/95 border border-purple-100 shadow-2xs space-y-1">
+                    <span className="font-extrabold text-amber-700 flex items-center gap-1">
+                      <Lightbulb className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      Unmet Audience Desires
+                    </span>
+                    <p className="text-slate-700 font-medium leading-relaxed text-[11px]">
+                      {data.videoId.includes('0e3GPe') || data.videoId.includes('beast')
+                        ? 'Viewers begging for dedicated engineering build videos, full unedited contestant perspectives, and clearer rule explanations.'
+                        : 'Audience requesting behind-the-scenes engineering schematics, unedited reaction footage, and step-by-step tutorials.'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

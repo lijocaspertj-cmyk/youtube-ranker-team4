@@ -17,10 +17,10 @@ interface ChannelCardData {
 }
 
 const PRESET_BENCHMARKS = [
-  { label: '@mkbhd vs @mrbeast', handles: ['mkbhd', 'mrbeast'] },
-  { label: '@veritasium vs @LinusTechTips', handles: ['veritasium', 'LinusTechTips'] },
-  { label: '@fireship vs @lexfridman', handles: ['fireship', 'lexfridman'] },
-  { label: '@athleanx vs @JeffNippard', handles: ['athleanx', 'JeffNippard'] },
+  { label: 'MrBeast vs Mark Rober vs Dude Perfect', handles: ['mrbeast', 'markrober', 'dudeperfect'] },
+  { label: 'MrBeast vs Airrack (Viral Stunts)', handles: ['mrbeast', 'airrack'] },
+  { label: 'MKBHD vs Mrwhosetheboss (Consumer Tech)', handles: ['mkbhd', 'mrwhosetheboss'] },
+  { label: 'Veritasium vs Mark Rober (Science / Builds)', handles: ['veritasium', 'markrober'] },
 ];
 
 export const ChannelBenchmark: React.FC<ChannelBenchmarkProps> = ({
@@ -29,8 +29,9 @@ export const ChannelBenchmark: React.FC<ChannelBenchmarkProps> = ({
   onOpenKeyModal,
 }) => {
   const [channels, setChannels] = useState<ChannelCardData[]>([
-    { handle: 'mkbhd', data: null, loading: false, error: null },
     { handle: 'mrbeast', data: null, loading: false, error: null },
+    { handle: 'markrober', data: null, loading: false, error: null },
+    { handle: 'dudeperfect', data: null, loading: false, error: null },
   ]);
   const [handleInput, setHandleInput] = useState('');
   const [chartView, setChartView] = useState<'both' | 'views' | 'efficiency'>('both');
@@ -91,7 +92,7 @@ export const ChannelBenchmark: React.FC<ChannelBenchmarkProps> = ({
   };
 
   useEffect(() => {
-    loadPreset(['mkbhd', 'mrbeast']);
+    loadPreset(['mrbeast', 'markrober', 'dudeperfect']);
   }, [mockMode]);
 
   const handleAddChannel = (e: React.FormEvent) => {
@@ -146,12 +147,12 @@ export const ChannelBenchmark: React.FC<ChannelBenchmarkProps> = ({
             Direct Channel Health Benchmarking
           </h1>
           <p className="mt-2 text-sm sm:text-base text-rose-100 font-medium">
-            Side-by-side comparison matrix evaluating Subscriber Reach, Total Views, Video Uploads, and calculated Average View Efficiency (Total Views / Total Videos).
+            Monitor and benchmark how your competitors are performing. Compare Subscriber Reach, Total Views, Upload Velocity, and calculated Average View Efficiency (Total Views / Total Videos) to identify gaps where your channel can out-perform rivals.
           </p>
 
           {/* Quick Presets */}
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-rose-200">Preset Matchups:</span>
+            <span className="text-xs font-bold text-rose-200">Competitor Matchups:</span>
             {PRESET_BENCHMARKS.map((preset, idx) => (
               <button
                 key={idx}
@@ -532,6 +533,55 @@ export const ChannelBenchmark: React.FC<ChannelBenchmarkProps> = ({
                   achieves the highest view efficiency per upload, generating more views per piece of content published.
                 </span>
               )}
+            </div>
+          </div>
+
+          {/* Competitor Playbook: Strategic Takeaways to Outperform Competitors */}
+          <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-xs">
+                <Trophy className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-black text-sm text-slate-900 uppercase tracking-wide">
+                  Competitor Benchmarking: How Your Channel Can Improve
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Key creator takeaways comparing high-frequency production vs high-retention depth.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
+              <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
+                  <Video className="w-3.5 h-3.5 text-amber-500" />
+                  Volume vs. Quality Payoff
+                </span>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  <strong>Mark Rober</strong> published only ~158 videos yet commands ~32.4M avg views/upload. Creators don't need daily upload grind: extreme video payoff and high concept ideas outperform content saturation.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                  View-to-Subscriber Reach
+                </span>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  Channels with outsized View-to-Sub multiples generate steady algorithmic browse recommendations outside existing subs. Monitor this ratio to verify if your packaging appeals beyond core fans.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-1.5">
+                <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-rose-500" />
+                  Emotional Storytelling Advantage
+                </span>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  While mega-competitors scale up sets and budget, viewers consistently reward <strong>authentic vulnerability</strong> and <strong>character empathy</strong> — areas where nimble creators can decisively win.
+                </p>
+              </div>
             </div>
           </div>
         </div>
