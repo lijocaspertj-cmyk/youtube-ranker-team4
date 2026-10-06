@@ -795,10 +795,26 @@ export async function getTopicRankHandler(req: Request, res: Response) {
 
 /**
  * Feature 2: "Audience Pulse" & Sentiment Analysis Handler
- * Endpoint: /api/youtube/comments?videoId=...
+ * Endpoint: /api/youtube/comments?videoId=... (or url=...)
  */
+function extractVideoIdParam(input: string): string {
+  const trimmed = (input || '').trim();
+  if (!trimmed) return '0e3GPea1Tyg';
+  if (/^[a-zA-Z0-9_-]{10,14}$/.test(trimmed)) return trimmed;
+  const vMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{10,14})/);
+  if (vMatch && vMatch[1]) return vMatch[1];
+  const youtuMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{10,14})/);
+  if (youtuMatch && youtuMatch[1]) return youtuMatch[1];
+  const shortsMatch = trimmed.match(/\/shorts\/([a-zA-Z0-9_-]{10,14})/);
+  if (shortsMatch && shortsMatch[1]) return shortsMatch[1];
+  const embedMatch = trimmed.match(/\/(embed|live)\/([a-zA-Z0-9_-]{10,14})/);
+  if (embedMatch && embedMatch[2]) return embedMatch[2];
+  return trimmed;
+}
+
 export async function getCommentsHandler(req: Request, res: Response) {
-  const videoId = (req.query.videoId as string || req.query.id as string || 'dQw4w9WgXcQ').trim();
+  const rawInput = (req.query.videoId as string || req.query.url as string || req.query.id as string || '0e3GPea1Tyg').trim();
+  const videoId = extractVideoIdParam(rawInput);
   const keyId = getGoogleKeyId(req);
 
   // If live key is provided, attempt live fetch from Google YouTube commentThreads API

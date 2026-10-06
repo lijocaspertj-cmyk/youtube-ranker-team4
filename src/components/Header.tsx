@@ -29,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-18">
           
-          {/* 1. Brand Logo: PulseTube */}
+          {/* 1. Brand Logo: ExpertTube */}
           <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => setActiveSection('benchmark')}>
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-600 via-red-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-rose-500/25 ring-2 ring-rose-500/20">
               <Activity className="w-5 h-5 stroke-[2.5] animate-pulse" />
@@ -37,7 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-black text-2xl tracking-tight bg-gradient-to-r from-rose-600 via-red-600 to-amber-600 bg-clip-text text-transparent">
-                  PulseTube
+                  ExpertTube
                 </span>
                 <span className="hidden sm:inline-flex px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                   AI Intelligence

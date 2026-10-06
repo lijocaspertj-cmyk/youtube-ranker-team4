@@ -202,9 +202,9 @@ export default function App() {
             <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 flex items-center justify-center text-white shadow-xs">
               <Activity className="w-4 h-4" />
             </div>
-            <span className="font-black text-slate-800">PulseTube</span>
+            <span className="font-black text-slate-800">ExpertTube</span>
             <span>·</span>
-            <span>Channel Health & Audience Sentiment Intelligence</span>
+            <span>Channel Health & Competitor Audience Sentiment Intelligence</span>
           </div>
 
           <div className="flex items-center gap-4 text-[11px] font-semibold text-slate-600">

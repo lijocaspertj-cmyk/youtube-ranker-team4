@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquareQuote, Search, ThumbsUp, Tag, HelpCircle, CheckCircle2, AlertTriangle, Filter, Sparkles, RefreshCw, Flame, BarChart2, MessageCircle, Target, Lightbulb, TrendingUp } from 'lucide-react';
+import { 
+  MessageSquareQuote, Search, ThumbsUp, Tag, HelpCircle, CheckCircle2, 
+  AlertTriangle, Filter, Sparkles, RefreshCw, Flame, BarChart2, MessageCircle, 
+  Target, Lightbulb, TrendingUp, Link as LinkIcon, AlertCircle, HelpCircle as QuestionIcon,
+  MessageSquareShare, ListFilter, X
+} from 'lucide-react';
 import { AudiencePulseData, CommentItem, KeywordTag, SentimentType } from '../types';
 import { fetchAudiencePulse } from '../services/api';
 
@@ -12,6 +17,7 @@ interface AudiencePulseProps {
 const SAMPLE_COMPETITOR_VIDEOS = [
   {
     id: '0e3GPea1Tyg',
+    url: 'https://www.youtube.com/watch?v=0e3GPea1Tyg',
     creator: 'MrBeast',
     title: '$456,000 Squid Game in Real Life!',
     views: '624M',
@@ -19,6 +25,7 @@ const SAMPLE_COMPETITOR_VIDEOS = [
   },
   {
     id: 'hFZFjoX2cGg',
+    url: 'https://www.youtube.com/watch?v=hFZFjoX2cGg',
     creator: 'Mark Rober',
     title: 'Glitterbomb 5.0 vs Porch Pirates',
     views: '89M',
@@ -26,6 +33,7 @@ const SAMPLE_COMPETITOR_VIDEOS = [
   },
   {
     id: 'P5q3z4n8k1g',
+    url: 'https://www.youtube.com/watch?v=P5q3z4n8k1g',
     creator: 'Dude Perfect',
     title: 'World Record Edition 2',
     views: '52M',
@@ -33,6 +41,7 @@ const SAMPLE_COMPETITOR_VIDEOS = [
   },
   {
     id: 'mK97mJ3yA0E',
+    url: 'https://www.youtube.com/watch?v=mK97mJ3yA0E',
     creator: 'Airrack',
     title: 'I Trapped 100 People in a Grocery Store',
     views: '34M',
@@ -40,42 +49,73 @@ const SAMPLE_COMPETITOR_VIDEOS = [
   },
 ];
 
+/**
+ * Robust YouTube URL Extractor supporting all standard YouTube URL variations
+ */
+export function extractYouTubeVideoId(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return '';
+
+  // 1. Direct ID check (standard 11-char YouTube ID)
+  if (/^[a-zA-Z0-9_-]{10,14}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  // 2. Standard watch?v= format
+  const vParamMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{10,14})/);
+  if (vParamMatch && vParamMatch[1]) {
+    return vParamMatch[1];
+  }
+
+  // 3. Shortened youtu.be/ format
+  const youtuBeMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{10,14})/);
+  if (youtuBeMatch && youtuBeMatch[1]) {
+    return youtuBeMatch[1];
+  }
+
+  // 4. Shorts format
+  const shortsMatch = trimmed.match(/\/shorts\/([a-zA-Z0-9_-]{10,14})/);
+  if (shortsMatch && shortsMatch[1]) {
+    return shortsMatch[1];
+  }
+
+  // 5. Embed or Live format
+  const embedMatch = trimmed.match(/\/(embed|live)\/([a-zA-Z0-9_-]{10,14})/);
+  if (embedMatch && embedMatch[2]) {
+    return embedMatch[2];
+  }
+
+  // Fallback: strip query params and grab last segment
+  const cleanFallback = trimmed.split('?')[0].split('/').filter(Boolean).pop();
+  return cleanFallback || trimmed;
+}
+
 export const AudiencePulse: React.FC<AudiencePulseProps> = ({
   mockMode,
   hasKey,
   onOpenKeyModal,
 }) => {
-  const [videoIdInput, setVideoIdInput] = useState('0e3GPea1Tyg');
+  const [urlInput, setUrlInput] = useState('https://www.youtube.com/watch?v=0e3GPea1Tyg');
   const [currentVideoId, setCurrentVideoId] = useState('0e3GPea1Tyg');
   const [data, setData] = useState<AudiencePulseData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters
-  const [sentimentFilter, setSentimentFilter] = useState<'All' | SentimentType>('All');
+  // Customer Pain-Point Finder Filters
+  const [painPointCategory, setPainPointCategory] = useState<'all' | 'complaints' | 'questions' | 'requests' | 'positive'>('all');
+  const [customKeywordQuery, setCustomKeywordQuery] = useState('');
   const [activeKeywordTag, setActiveKeywordTag] = useState<string | null>(null);
 
-  const cleanVideoId = (input: string): string => {
-    const trimmed = input.trim();
-    if (trimmed.includes('v=')) {
-      const match = trimmed.match(/[?&]v=([^&]+)/);
-      if (match && match[1]) return match[1];
-    }
-    if (trimmed.includes('youtu.be/')) {
-      const match = trimmed.match(/youtu\.be\/([^?&]+)/);
-      if (match && match[1]) return match[1];
-    }
-    return trimmed;
-  };
-
-  const loadPulse = async (vid: string) => {
-    const cleanId = cleanVideoId(vid);
+  const loadPulse = async (urlOrId: string) => {
+    const cleanId = extractYouTubeVideoId(urlOrId);
     if (!cleanId) return;
 
     setCurrentVideoId(cleanId);
     setLoading(true);
     setError(null);
     setActiveKeywordTag(null);
+    setCustomKeywordQuery('');
+    setPainPointCategory('all');
 
     try {
       const res = await fetchAudiencePulse(cleanId, undefined, mockMode);
@@ -93,26 +133,56 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (videoIdInput.trim()) {
-      loadPulse(videoIdInput);
+    if (urlInput.trim()) {
+      loadPulse(urlInput);
     }
   };
 
   // Find active video sample if applicable
   const matchedSample = SAMPLE_COMPETITOR_VIDEOS.find(v => v.id.toLowerCase() === currentVideoId.toLowerCase());
 
-  // Filtered comments
-  const filteredComments = (data?.comments || []).filter(c => {
-    if (sentimentFilter !== 'All' && c.sentiment !== sentimentFilter) {
-      return false;
+  // Filtered comments logic for Customer Pain-Point Finder & Top Comment Aggregator
+  const filteredComments = (data?.comments || []).filter(comment => {
+    const textLower = comment.text.toLowerCase();
+
+    // 1. Pain Point Category Filter
+    if (painPointCategory === 'complaints') {
+      const isPainPointSentiment = comment.sentiment === 'Question/Pain Point';
+      const hasComplaintKeywords = textLower.includes('loud') || textLower.includes('fast') || 
+        textLower.includes('sound') || textLower.includes('pacing') || textLower.includes('broke') || 
+        textLower.includes('staged') || textLower.includes('issue') || textLower.includes('annoying') ||
+        textLower.includes('hate') || textLower.includes('problem') || textLower.includes('terrible');
+      if (!isPainPointSentiment && !hasComplaintKeywords) return false;
+    } else if (painPointCategory === 'questions') {
+      const hasQuestionMark = comment.text.includes('?');
+      const hasQuestionKeywords = textLower.includes('how did') || textLower.includes('what camera') || 
+        textLower.includes('why did') || textLower.includes('where to') || textLower.includes('is there') ||
+        textLower.includes('how to');
+      if (!hasQuestionMark && !hasQuestionKeywords) return false;
+    } else if (painPointCategory === 'requests') {
+      const isConstructive = comment.sentiment === 'Constructive/Feedback';
+      const hasRequestKeywords = textLower.includes('wish') || textLower.includes('please make') || 
+        textLower.includes('tutorial') || textLower.includes('part 2') || textLower.includes('behind the scenes') ||
+        textLower.includes('release') || textLower.includes('need') || textLower.includes('suggest');
+      if (!isConstructive && !hasRequestKeywords) return false;
+    } else if (painPointCategory === 'positive') {
+      if (comment.sentiment !== 'Positive') return false;
     }
+
+    // 2. Active Keyword Tag Filter
     if (activeKeywordTag) {
       const tagLower = activeKeywordTag.toLowerCase();
-      const textLower = c.text.toLowerCase();
-      const matchDirect = c.matchingTag?.toLowerCase() === tagLower;
+      const matchDirect = comment.matchingTag?.toLowerCase() === tagLower;
       const matchText = textLower.includes(tagLower) || tagLower.split(' ').some(w => w.length > 3 && textLower.includes(w));
-      return matchDirect || matchText;
+      if (!matchDirect && !matchText) return false;
     }
+
+    // 3. Custom Keyword Search
+    if (customKeywordQuery.trim()) {
+      const queryLower = customKeywordQuery.trim().toLowerCase();
+      if (!textLower.includes(queryLower)) return false;
+    }
+
     return true;
   });
 
@@ -156,12 +226,35 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
             "Audience Pulse" & Sentiment Analysis
           </h1>
           <p className="mt-2 text-sm sm:text-base text-purple-100 font-medium">
-            Monitor how your competitors' audiences react. Extract their viewers' biggest frustrations, unfulfilled content desires, and audio/pacing complaints so your channel can out-execute them.
+            Paste any YouTube URL to extract top-liked competitor comments and uncover common audience questions, complaints, or content feature requests so your channel can out-perform rivals.
           </p>
 
+          {/* Dual Core Value Propositions Callout */}
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-start gap-2.5">
+              <MessageSquareShare className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
+              <div>
+                <span className="font-extrabold text-white block">Top Comment Aggregator</span>
+                <span className="text-purple-100 text-[11px]">
+                  Extracts top-liked user comments from competitor breakout videos to study high-retention audience triggers.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-start gap-2.5">
+              <Target className="w-4 h-4 text-emerald-300 mt-0.5 shrink-0" />
+              <div>
+                <span className="font-extrabold text-white block">Customer Pain-Point Finder</span>
+                <span className="text-purple-100 text-[11px]">
+                  Runs instant keyword and sentiment filters on comment text to highlight viewer questions, complaints, or feature requests.
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Competitor Sample Video Presets */}
-          <div className="mt-5 space-y-2">
-            <span className="text-xs font-bold text-purple-200">Competitor Case Studies (MrBeast vs Niche Rivals):</span>
+          <div className="mt-6 space-y-2">
+            <span className="text-xs font-bold text-purple-200">Try Competitor Breakout Video URLs:</span>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
               {SAMPLE_COMPETITOR_VIDEOS.map((vid, idx) => {
                 const isActive = currentVideoId.toLowerCase() === vid.id.toLowerCase();
@@ -170,8 +263,8 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
                     key={idx}
                     type="button"
                     onClick={() => {
-                      setVideoIdInput(vid.id);
-                      loadPulse(vid.id);
+                      setUrlInput(vid.url);
+                      loadPulse(vid.url);
                     }}
                     className={`p-2.5 rounded-xl text-left transition-all border cursor-pointer ${
                       isActive
@@ -198,37 +291,52 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
         <div className="absolute -right-16 -top-16 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      {/* Input Field for Video ID */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+      {/* Input Field: Enter Any YouTube URL */}
+      <div className="p-4 sm:p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+            <LinkIcon className="w-3.5 h-3.5 text-violet-600" />
+            <span>Enter Any YouTube URL (Watch, Shorts, or Share Link)</span>
+          </label>
+          <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
+            e.g. https://www.youtube.com/watch?v=0e3GPea1Tyg
+          </span>
+        </div>
+
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              value={videoIdInput}
-              onChange={(e) => setVideoIdInput(e.target.value)}
-              placeholder="Enter YouTube Video ID (e.g. 0e3GPea1Tyg) or full video URL..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="Paste any YouTube URL (https://www.youtube.com/watch?v=... or https://youtu.be/...)"
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm shadow-violet-600/20 disabled:opacity-50"
+            className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm shadow-violet-600/20 disabled:opacity-50 shrink-0"
           >
             {loading ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Auditing Competitor Video...</span>
+                <span>Aggregating Comments & Pulse...</span>
               </>
             ) : (
               <>
                 <Target className="w-4 h-4" />
-                <span>Audit Competitor Audience</span>
+                <span>Extract Audience Pulse</span>
               </>
             )}
           </button>
         </form>
+
+        <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+          <span className="text-violet-600 font-bold">Supports:</span>
+          <span>Desktop URL (youtube.com/watch?v=...), Shortened (youtu.be/...), YouTube Shorts (/shorts/...), or direct Video ID.</span>
+        </div>
       </div>
 
       {error && (
@@ -251,9 +359,10 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
               <div>
                 <span className="text-xs font-bold text-violet-600 uppercase tracking-wider">
-                  Video ID: <code className="font-mono bg-violet-50 px-1.5 py-0.5 rounded">{data.videoId}</code>
+                  Audited Video: <code className="font-mono bg-violet-50 px-1.5 py-0.5 rounded">{data.videoId}</code>
+                  {matchedSample && <span className="ml-2 font-bold text-slate-800">({matchedSample.creator}: {matchedSample.title})</span>}
                 </span>
-                <h2 className="text-2xl font-black text-slate-900 mt-1">Audience Sentiment Summary</h2>
+                <h2 className="text-2xl font-black text-slate-900 mt-1">Audience Sentiment & Comment Summary</h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Natural Language Sentiment Ratio extracted from community comments.
                 </p>
@@ -404,113 +513,212 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
             </div>
           </div>
 
-          {/* Keyword Cloud & Tag List Highlighting Customer Desires / Complaints */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-violet-600" />
-                  <span>Keyword Cloud: Top Customer Desires & Pain Points</span>
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Click any topic tag below to filter and highlight matching comments in the feed.
-                </p>
+          {/* Customer Pain-Point Finder: Simple Keyword & Sentiment Filter Controls */}
+          <div className="bg-white rounded-3xl border-2 border-violet-100 p-6 sm:p-8 shadow-sm space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shadow-xs">
+                  <Filter className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Customer Pain-Point Finder</h3>
+                  <p className="text-xs text-slate-500">
+                    Run simple keyword or sentiment filters to highlight common audience questions, complaints, or feature requests.
+                  </p>
+                </div>
               </div>
 
-              {activeKeywordTag && (
+              {(painPointCategory !== 'all' || customKeywordQuery || activeKeywordTag) && (
                 <button
-                  onClick={() => setActiveKeywordTag(null)}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-800 underline cursor-pointer self-start sm:self-auto"
+                  onClick={() => {
+                    setPainPointCategory('all');
+                    setCustomKeywordQuery('');
+                    setActiveKeywordTag(null);
+                  }}
+                  className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer self-start sm:self-auto"
                 >
-                  Clear Tag Filter (Showing all)
+                  <X className="w-3.5 h-3.5" />
+                  <span>Reset All Filters</span>
                 </button>
               )}
             </div>
 
-            {/* Tag List */}
-            <div className="flex flex-wrap gap-2.5 pt-2">
-              {data.keywords.map((kw, idx) => {
-                const isActive = activeKeywordTag === kw.tag;
-                const isPainPoint = kw.sentiment === 'Question/Pain Point';
-                const isPositive = kw.sentiment === 'Positive';
+            {/* Pain Point Category Selector */}
+            <div className="space-y-2">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-600 block">
+                1. Select Filter Mode:
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPainPointCategory('all')}
+                  className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all border cursor-pointer ${
+                    painPointCategory === 'all'
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  All Comments
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPainPointCategory('complaints')}
+                  className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all border flex items-center justify-center gap-1.5 cursor-pointer ${
+                    painPointCategory === 'complaints'
+                      ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                      : 'bg-rose-50/70 text-rose-800 border-rose-200 hover:bg-rose-100'
+                  }`}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>Complaints / Friction</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPainPointCategory('questions')}
+                  className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all border flex items-center justify-center gap-1.5 cursor-pointer ${
+                    painPointCategory === 'questions'
+                      ? 'bg-violet-600 text-white border-violet-600 shadow-xs'
+                      : 'bg-violet-50/70 text-violet-800 border-violet-200 hover:bg-violet-100'
+                  }`}
+                >
+                  <QuestionIcon className="w-3.5 h-3.5" />
+                  <span>Audience Questions</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPainPointCategory('requests')}
+                  className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all border flex items-center justify-center gap-1.5 cursor-pointer ${
+                    painPointCategory === 'requests'
+                      ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                      : 'bg-amber-50/70 text-amber-800 border-amber-200 hover:bg-amber-100'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Feature Requests</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPainPointCategory('positive')}
+                  className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all border flex items-center justify-center gap-1.5 cursor-pointer ${
+                    painPointCategory === 'positive'
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                      : 'bg-emerald-50/70 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                  }`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Top Praise</span>
+                </button>
+              </div>
+            </div>
 
-                return (
+            {/* Keyword Search Input & Tag Cloud */}
+            <div className="space-y-3 pt-2">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-600 block">
+                2. Filter By Specific Keyword or Pain-Point Tag:
+              </span>
+              
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={customKeywordQuery}
+                  onChange={(e) => setCustomKeywordQuery(e.target.value)}
+                  placeholder="Type any keyword (e.g. pacing, sound, sponsor, budget, contestants, camera)..."
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+                {customKeywordQuery && (
                   <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setActiveKeywordTag(isActive ? null : kw.tag)}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border ${
-                      isActive
-                        ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105'
-                        : isPainPoint
-                        ? 'bg-rose-50/70 text-rose-800 border-rose-200 hover:bg-rose-100'
-                        : isPositive
-                        ? 'bg-emerald-50/70 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                        : 'bg-amber-50/70 text-amber-800 border-amber-200 hover:bg-amber-100'
-                    }`}
+                    onClick={() => setCustomKeywordQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
-                    <span>{kw.tag}</span>
-                    <span
-                      className={`px-1.5 py-0.2 rounded-md font-mono text-[10px] ${
-                        isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-600 border border-slate-200'
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Tag Cloud */}
+              <div className="flex flex-wrap gap-2 pt-1">
+                {data.keywords.map((kw, idx) => {
+                  const isActive = activeKeywordTag === kw.tag;
+                  const isPainPoint = kw.sentiment === 'Question/Pain Point';
+                  const isPositive = kw.sentiment === 'Positive';
+
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActiveKeywordTag(isActive ? null : kw.tag)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                        isActive
+                          ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105'
+                          : isPainPoint
+                          ? 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
+                          : isPositive
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                          : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
                       }`}
                     >
-                      {kw.count} mentions
-                    </span>
-                  </button>
-                );
-              })}
+                      <span>{kw.tag}</span>
+                      <span className={`px-1.5 py-0.2 rounded font-mono text-[10px] ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-600 border border-slate-200'
+                      }`}>
+                        {kw.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* Interactive Comment Feed */}
+          {/* Top Comment Aggregator: Top-Liked User Comments */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-violet-600" />
-                  <span>Interactive Comment Feed</span>
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-violet-600 uppercase tracking-wider mb-1">
+                  <MessageSquareShare className="w-4 h-4" />
+                  <span>Top Comment Aggregator</span>
+                </div>
+                <h3 className="text-xl font-black text-slate-900">
+                  Extracted Top-Liked User Comments ({filteredComments.length} Shown)
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Top-liked comments tagged with automated sentiment badges.
-                  {activeKeywordTag && (
-                    <span className="font-bold text-violet-600 ml-1">
-                      Filtering by tag: "{activeKeywordTag}"
-                    </span>
-                  )}
+                  High-traction community feedback ranked by thumbs-up engagement from the competitor video.
                 </p>
               </div>
 
-              {/* Sentiment filter pills */}
-              <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 self-start sm:self-auto flex-wrap">
-                {(['All', 'Positive', 'Constructive/Feedback', 'Question/Pain Point'] as const).map((filterVal) => (
-                  <button
-                    key={filterVal}
-                    onClick={() => setSentimentFilter(filterVal)}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                      sentimentFilter === filterVal
-                        ? 'bg-white text-slate-900 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {filterVal === 'All' ? 'All Comments' : filterVal}
-                  </button>
-                ))}
+              {/* Active Filter Pills Indicator */}
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-800">
+                  Mode: {painPointCategory.toUpperCase()}
+                </span>
+                {customKeywordQuery && (
+                  <span className="px-2.5 py-1 rounded-lg bg-violet-100 text-violet-800 border border-violet-200">
+                    Keyword: "{customKeywordQuery}"
+                  </span>
+                )}
+                {activeKeywordTag && (
+                  <span className="px-2.5 py-1 rounded-lg bg-purple-100 text-purple-800 border border-purple-200">
+                    Tag: #{activeKeywordTag}
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Comments List */}
             {filteredComments.length === 0 ? (
-              <div className="py-12 text-center text-slate-400 text-xs">
-                <p className="font-bold">No comments matched the current filter.</p>
+              <div className="py-14 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-slate-200">
+                <p className="font-bold text-slate-600">No comments matched the current pain-point filter.</p>
+                <p className="mt-1 text-slate-400">Try switching filter mode or clearing your keyword search.</p>
                 <button
                   onClick={() => {
-                    setSentimentFilter('All');
+                    setPainPointCategory('all');
+                    setCustomKeywordQuery('');
                     setActiveKeywordTag(null);
                   }}
-                  className="mt-2 text-violet-600 underline font-semibold cursor-pointer"
+                  className="mt-3 px-4 py-1.5 rounded-xl bg-violet-600 text-white font-bold text-xs cursor-pointer shadow-xs"
                 >
-                  Reset all filters
+                  Reset Filters
                 </button>
               </div>
             ) : (
@@ -525,7 +733,7 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
                         <img
                           src={comment.avatar}
                           alt={comment.author}
-                          className="w-9 h-9 rounded-full object-cover border border-slate-200"
+                          className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-2xs"
                         />
                         <div>
                           <span className="font-bold text-xs text-slate-900 block">{comment.author}</span>
@@ -544,15 +752,15 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
                       {comment.text}
                     </p>
 
-                    {/* Footer: Likes and matching tag */}
-                    <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-200/50">
-                      <div className="flex items-center gap-1.5 text-slate-600 font-bold">
-                        <ThumbsUp className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{comment.likeCount.toLocaleString()} likes</span>
+                    {/* Footer: Likes count and matching tag */}
+                    <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-200/60">
+                      <div className="flex items-center gap-1.5 text-slate-700 font-bold bg-white px-2.5 py-1 rounded-lg border border-slate-200/80">
+                        <ThumbsUp className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+                        <span>{comment.likeCount.toLocaleString()} upvotes</span>
                       </div>
 
                       {comment.matchingTag && (
-                        <span className="text-[10px] font-mono font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+                        <span className="text-[10px] font-mono font-semibold text-violet-700 bg-violet-50 px-2.5 py-1 rounded-lg border border-violet-200">
                           #{comment.matchingTag}
                         </span>
                       )}
