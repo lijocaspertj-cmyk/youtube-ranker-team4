@@ -1,9 +1,9 @@
 import React from 'react';
-import { Youtube, Key, Radio, Sparkles, Video, Users, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Youtube, Key, Radio, Sparkles, Video, Users, CheckCircle2, AlertCircle, ArrowRightLeft } from 'lucide-react';
 
 interface HeaderProps {
-  activeTab: 'rank' | 'channel' | 'video' | 'sora' | 'api';
-  setActiveTab: (tab: 'rank' | 'channel' | 'video' | 'sora' | 'api') => void;
+  activeTab: 'rank' | 'channel' | 'compare' | 'video' | 'sora' | 'api';
+  setActiveTab: (tab: 'rank' | 'channel' | 'compare' | 'video' | 'sora' | 'api') => void;
   hasKey: boolean;
   onOpenKeyModal: () => void;
 }
@@ -59,6 +59,17 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Radio className="w-4 h-4" />
               Channel Numbers
+            </button>
+            <button
+              onClick={() => setActiveTab('compare')}
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all ${
+                activeTab === 'compare'
+                  ? 'bg-gradient-to-r from-fuchsia-600 to-rose-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              }`}
+            >
+              <ArrowRightLeft className="w-4 h-4" />
+              Compare Channels
             </button>
             <button
               onClick={() => setActiveTab('video')}
@@ -138,6 +149,14 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             Channel Numbers
+          </button>
+          <button
+            onClick={() => setActiveTab('compare')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap ${
+              activeTab === 'compare' ? 'bg-fuchsia-600 text-white' : 'text-slate-600 bg-slate-100'
+            }`}
+          >
+            Compare
           </button>
           <button
             onClick={() => setActiveTab('video')}

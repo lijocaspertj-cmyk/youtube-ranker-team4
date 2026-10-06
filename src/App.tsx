@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { TopicRankChecker } from './components/TopicRankChecker';
 import { ChannelInspector } from './components/ChannelInspector';
+import { ChannelCompare } from './components/ChannelCompare';
 import { VideoInspector } from './components/VideoInspector';
 import { SoraStudio } from './components/SoraStudio';
 import { ServerlessHub } from './components/ServerlessHub';
@@ -15,7 +16,7 @@ import { getStoredKeyId } from './services/api';
 import { Youtube, Sparkles, ShieldCheck, Heart } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'rank' | 'channel' | 'video' | 'sora' | 'api'>('rank');
+  const [activeTab, setActiveTab] = useState<'rank' | 'channel' | 'compare' | 'video' | 'sora' | 'api'>('rank');
   const [targetHandle, setTargetHandle] = useState<string>('mkbhd');
   const [targetVideoId, setTargetVideoId] = useState<string>('dQw4w9WgXcQ');
   const [targetTopic, setTargetTopic] = useState<string>('Technology & AI');
@@ -48,6 +49,12 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleCompareChannel = (handle: string) => {
+    setTargetHandle(handle);
+    setActiveTab('compare');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-rose-500 selection:text-white flex flex-col">
       {/* Top Header */}
@@ -75,6 +82,15 @@ export default function App() {
             initialHandle={targetHandle}
             hasKey={hasKey}
             onOpenKeyModal={() => setKeyModalOpen(true)}
+            onCompare={handleCompareChannel}
+          />
+        )}
+
+        {activeTab === 'compare' && (
+          <ChannelCompare
+            hasKey={hasKey}
+            onOpenKeyModal={() => setKeyModalOpen(true)}
+            onInspectChannel={handleInspectChannel}
           />
         )}
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Radio, CheckCircle, Copy, ExternalLink, RefreshCw, BarChart2, Users, Eye, Video, Calendar, ShieldCheck, Code } from 'lucide-react';
+import { Search, Radio, CheckCircle, Copy, ExternalLink, RefreshCw, BarChart2, Users, Eye, Video, Calendar, ShieldCheck, Code, ArrowRightLeft } from 'lucide-react';
 import { ChannelItem } from '../types';
 import { fetchChannelStats } from '../services/api';
 
@@ -7,6 +7,7 @@ interface ChannelInspectorProps {
   initialHandle?: string;
   hasKey: boolean;
   onOpenKeyModal: () => void;
+  onCompare?: (handle: string) => void;
 }
 
 const SAMPLE_HANDLES = ['mkbhd', 'veritasium', 'fireship', 'Mrwhosetheboss', 'lexfridman', 'LinusTechTips'];
@@ -14,7 +15,8 @@ const SAMPLE_HANDLES = ['mkbhd', 'veritasium', 'fireship', 'Mrwhosetheboss', 'le
 export const ChannelInspector: React.FC<ChannelInspectorProps> = ({
   initialHandle = 'mkbhd',
   hasKey,
-  onOpenKeyModal
+  onOpenKeyModal,
+  onCompare
 }) => {
   const [handleInput, setHandleInput] = useState(initialHandle);
   const [channelData, setChannelData] = useState<ChannelItem | null>(null);
@@ -229,15 +231,26 @@ export const ChannelInspector: React.FC<ChannelInspectorProps> = ({
               </div>
             </div>
 
-            <a
-              href={`https://youtube.com/${channelData.snippet.customUrl || '@' + handleInput}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold transition-all cursor-pointer self-start sm:self-center"
-            >
-              <span>Open on YouTube</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+            <div className="flex items-center gap-2 self-start sm:self-center">
+              {onCompare && (
+                <button
+                  onClick={() => onCompare(channelData.snippet.customUrl?.replace(/^@/, '') || handleInput)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-fuchsia-50 text-fuchsia-700 hover:bg-fuchsia-100 text-xs font-bold transition-all cursor-pointer"
+                >
+                  <ArrowRightLeft className="w-3.5 h-3.5" />
+                  <span>Compare Channel</span>
+                </button>
+              )}
+              <a
+                href={`https://youtube.com/${channelData.snippet.customUrl || '@' + handleInput}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold transition-all cursor-pointer"
+              >
+                <span>Open on YouTube</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
 
           {/* Description */}
