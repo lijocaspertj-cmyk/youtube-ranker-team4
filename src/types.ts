@@ -110,3 +110,55 @@ export interface SoraResponse {
   keyConfigured: boolean;
   generatedAt: string;
 }
+
+export type SentimentType = 'Positive' | 'Constructive/Feedback' | 'Question/Pain Point';
+
+export interface CommentItem {
+  id: string;
+  author: string;
+  avatar: string;
+  text: string;
+  likeCount: number;
+  publishedAt: string;
+  sentiment: SentimentType;
+  matchingTag?: string;
+}
+
+export interface KeywordTag {
+  tag: string;
+  count: number;
+  sentiment: SentimentType;
+}
+
+export interface AudiencePulseData {
+  source: string;
+  videoId: string;
+  totalComments: number;
+  ratio: {
+    positive: number;
+    neutral?: number;
+    constructive?: number;
+    negative: number;
+  };
+  keywords: KeywordTag[];
+  comments: CommentItem[];
+}
+
+export interface NicheVideoResult {
+  id: string;
+  title: string;
+  channelTitle: string;
+  thumbnail: string;
+  publishedAt: string;
+  views: number;
+  likes: number;
+  comments: number;
+  engagementScore: number; // ((likes + comments) / views) * 100
+}
+
+export interface NicheSearchResponse {
+  source: string;
+  query: string;
+  totalResults: number;
+  items: NicheVideoResult[];
+}

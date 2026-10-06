@@ -1,4 +1,4 @@
-import { ChannelRankEntry, ChannelItem, VideoItem, HealthResponse, SoraResponse } from '../types';
+import { ChannelRankEntry, ChannelItem, VideoItem, HealthResponse, SoraResponse, AudiencePulseData, NicheSearchResponse } from '../types';
 
 export function getStoredKeyId(): string {
   if (typeof window === 'undefined') return '';
@@ -14,14 +14,28 @@ export function setStoredKeyId(key: string): void {
   }
 }
 
-function getRequestHeaders(customKey?: string): HeadersInit {
+export function getStoredMockMode(): boolean {
+  if (typeof window === 'undefined') return true;
+  const stored = localStorage.getItem('pulsetube_mock_mode');
+  // default to Mock Data Mode = true so users can immediately test without needing to paste a key
+  return stored !== null ? stored === 'true' : true;
+}
+
+export function setStoredMockMode(enabled: boolean): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('pulsetube_mock_mode', enabled ? 'true' : 'false');
+}
+
+function getRequestHeaders(customKey?: string, isMockMode?: boolean): HeadersInit {
   const headers: Record<string, string> = {
     'Accept': 'application/json',
   };
-  const key = (customKey !== undefined ? customKey : getStoredKeyId()).trim();
-  if (key) {
-    // User requirement: "All requests need the header: KeyId: <Google_KEY_ID>"
-    headers['KeyId'] = key;
+  const mock = isMockMode !== undefined ? isMockMode : getStoredMockMode();
+  if (!mock) {
+    const key = (customKey !== undefined ? customKey : getStoredKeyId()).trim();
+    if (key) {
+      headers['KeyId'] = key;
+    }
   }
   return headers;
 }
@@ -41,9 +55,8 @@ export async function fetchHealth(): Promise<HealthResponse> {
 
 /**
  * YouTube - stats for one video (1 unit)
- * https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=VIDEO_ID
  */
-export async function fetchVideoStats(videoId: string, customKey?: string): Promise<{
+export async function fetchVideoStats(videoId: string, customKey?: string, isMock?: boolean): Promise<{
   source: string;
   items: VideoItem[];
   raw?: any;
@@ -52,7 +65,7 @@ export async function fetchVideoStats(videoId: string, customKey?: string): Prom
 }> {
   const cleanId = videoId.trim();
   const res = await fetch(`/api/youtube/video?id=${encodeURIComponent(cleanId)}`, {
-    headers: getRequestHeaders(customKey),
+    headers: getRequestHeaders(customKey, isMock),
   });
   const data = await res.json();
   if (!res.ok) {
@@ -63,9 +76,8 @@ export async function fetchVideoStats(videoId: string, customKey?: string): Prom
 
 /**
  * YouTube - a channel's numbers (1 unit)
- * https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&forHandle=SOME_HANDLE
  */
-export async function fetchChannelStats(identifier: string, isHandle: boolean = true, customKey?: string): Promise<{
+export async function fetchChannelStats(identifier: string, isHandle: boolean = true, customKey?: string, isMock?: boolean): Promise<{
   source: string;
   items: ChannelItem[];
   raw?: any;
@@ -75,7 +87,7 @@ export async function fetchChannelStats(identifier: string, isHandle: boolean = 
   const cleanId = identifier.trim().replace(/^@/, '');
   const queryParam = isHandle ? `handle=${encodeURIComponent(cleanId)}` : `id=${encodeURIComponent(cleanId)}`;
   const res = await fetch(`/api/youtube/channel?${queryParam}`, {
-    headers: getRequestHeaders(customKey),
+    headers: getRequestHeaders(customKey, isMock),
   });
   const data = await res.json();
   if (!res.ok) {
@@ -86,20 +98,49 @@ export async function fetchChannelStats(identifier: string, isHandle: boolean = 
 
 /**
  * YouTube Topic Keyword Rank Checker
- * Takes in topic keyword and queries channels statistics
  */
-export async function fetchTopicRankings(topic: string, customKey?: string): Promise<{
+export async function fetchTopicRankings(topic: string, customKey?: string, isMock?: boolean): Promise<{
   source: string;
   query: string;
   totalRanked: number;
   rankings: ChannelRankEntry[];
 }> {
   const res = await fetch(`/api/youtube/rank?q=${encodeURIComponent(topic.trim())}`, {
-    headers: getRequestHeaders(customKey),
+    headers: getRequestHeaders(customKey, isMock),
   });
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.error || `Failed to fetch topic rank (${res.status})`);
+  }
+  return data;
+}
+
+/**
+ * Feature 2: "Audience Pulse" & Sentiment Analysis
+ */
+export async function fetchAudiencePulse(videoId: string, customKey?: string, isMock?: boolean): Promise<AudiencePulseData> {
+  const cleanId = videoId.trim();
+  const res = await fetch(`/api/youtube/comments?videoId=${encodeURIComponent(cleanId)}`, {
+    headers: getRequestHeaders(customKey, isMock),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || `Failed to fetch comments & audience pulse (${res.status})`);
+  }
+  return data;
+}
+
+/**
+ * Feature 3: On-Demand Niche Search
+ */
+export async function fetchNicheMarketResults(query: string, customKey?: string, isMock?: boolean): Promise<NicheSearchResponse> {
+  const cleanQ = query.trim();
+  const res = await fetch(`/api/youtube/niche-search?q=${encodeURIComponent(cleanQ)}`, {
+    headers: getRequestHeaders(customKey, isMock),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || `Failed to search niche market (${res.status})`);
   }
   return data;
 }

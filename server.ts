@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import healthHandler from './api/health.ts';
 import soraHandler from './api/sora.ts';
-import { getVideoStatsHandler, getChannelStatsHandler, getTopicRankHandler } from './api/youtube.ts';
+import { getVideoStatsHandler, getChannelStatsHandler, getTopicRankHandler, getCommentsHandler, getNicheSearchHandler } from './api/youtube.ts';
 
 dotenv.config();
 
@@ -28,6 +28,8 @@ async function startServer() {
   app.get('/api/youtube/channels', (req: Request, res: Response) => getChannelStatsHandler(req, res));
   app.get('/api/youtube/rank', (req: Request, res: Response) => getTopicRankHandler(req, res));
   app.get('/api/youtube/search', (req: Request, res: Response) => getTopicRankHandler(req, res));
+  app.get('/api/youtube/comments', (req: Request, res: Response) => getCommentsHandler(req, res));
+  app.get('/api/youtube/niche-search', (req: Request, res: Response) => getNicheSearchHandler(req, res));
 
   const isProduction = process.env.NODE_ENV === 'production';
 
