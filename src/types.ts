@@ -150,6 +150,8 @@ export interface NicheVideoResult {
   channelTitle: string;
   thumbnail: string;
   publishedAt: string;
+  duration?: string;
+  videoUrl?: string;
   views: number;
   likes: number;
   comments: number;

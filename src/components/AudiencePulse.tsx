@@ -12,6 +12,7 @@ interface AudiencePulseProps {
   mockMode: boolean;
   hasKey: boolean;
   onOpenKeyModal: () => void;
+  initialUrl?: string;
 }
 
 const SAMPLE_COMPETITOR_VIDEOS = [
@@ -94,6 +95,7 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
   mockMode,
   hasKey,
   onOpenKeyModal,
+  initialUrl,
 }) => {
   const [urlInput, setUrlInput] = useState('https://www.youtube.com/watch?v=0e3GPea1Tyg');
   const [currentVideoId, setCurrentVideoId] = useState('0e3GPea1Tyg');
@@ -128,8 +130,13 @@ export const AudiencePulse: React.FC<AudiencePulseProps> = ({
   };
 
   useEffect(() => {
-    loadPulse(currentVideoId);
-  }, [mockMode]);
+    if (initialUrl) {
+      setUrlInput(initialUrl);
+      loadPulse(initialUrl);
+    } else {
+      loadPulse(currentVideoId);
+    }
+  }, [mockMode, initialUrl]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

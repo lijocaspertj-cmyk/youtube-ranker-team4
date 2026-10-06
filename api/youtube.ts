@@ -1377,17 +1377,25 @@ export async function getNicheSearchHandler(req: Request, res: Response) {
     'NextGen Analytics', 'Strategy Unpacked'
   ];
 
+  const sampleDurations = [
+    '14:28', '21:45', '18:12', '11:05', '26:50',
+    '16:34', '09:52', '31:20', '13:40', '19:15'
+  ];
+
   const mockItems = Array.from({ length: 10 }).map((_, i) => {
     const views = Math.floor(180000 + (10 - i) * 145000 + Math.random() * 50000);
     const likes = Math.floor(views * (0.038 + (i % 3) * 0.015));
     const comments = Math.floor(views * (0.0025 + (i % 2) * 0.001));
     const engagementScore = parseFloat((((likes + comments) / views) * 100).toFixed(2));
+    const id = `niche_res_${i + 1}`;
 
     return {
-      id: `niche_res_${i + 1}`,
+      id,
       title: titleTemplates[i] || `${query} Deep Dive #${i + 1}`,
       channelTitle: channels[i] || `Creator #${i + 1}`,
       thumbnail: sampleThumbnails[i % sampleThumbnails.length],
+      duration: sampleDurations[i % sampleDurations.length],
+      videoUrl: `https://www.youtube.com/watch?v=${id}`,
       publishedAt: `${i + 1} ${i === 0 ? 'day' : i < 7 ? 'days' : 'weeks'} ago`,
       views,
       likes,

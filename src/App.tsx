@@ -24,6 +24,9 @@ export default function App() {
   const [searchCredits, setSearchCredits] = useState<number>(18);
   const [maxCredits, setMaxCredits] = useState<number>(20);
 
+  // Cross-feature bridge: feed video ID/URL from Market Explorer into Audience Pulse
+  const [pulseVideoUrl, setPulseVideoUrl] = useState<string>('https://www.youtube.com/watch?v=0e3GPea1Tyg');
+
   const checkKey = () => {
     setHasKey(Boolean(getStoredKeyId()));
   };
@@ -69,6 +72,13 @@ export default function App() {
   const handleAddDemoCredits = () => {
     setSearchCredits(prev => prev + 10);
     setUpgradeModalOpen(false);
+  };
+
+  const handleAnalyzeSentimentFromExplorer = (videoId: string, videoUrl?: string) => {
+    const targetUrl = videoUrl || `https://www.youtube.com/watch?v=${videoId}`;
+    setPulseVideoUrl(targetUrl);
+    setActiveSection('pulse');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -158,6 +168,7 @@ export default function App() {
               mockMode={mockMode}
               hasKey={hasKey}
               onOpenKeyModal={() => setKeyModalOpen(true)}
+              initialUrl={pulseVideoUrl}
             />
           </section>
         )}
@@ -174,6 +185,7 @@ export default function App() {
               onOpenUpgradeModal={() => setUpgradeModalOpen(true)}
               onSimulateZeroCredits={handleSimulateZeroCredits}
               onResetCredits={handleResetCredits}
+              onAnalyzeSentiment={handleAnalyzeSentimentFromExplorer}
             />
           </section>
         )}

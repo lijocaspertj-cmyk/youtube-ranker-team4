@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Zap, AlertCircle, Sparkles, TrendingUp, Calendar, Eye, ThumbsUp, MessageSquare, ShieldAlert, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { 
+  Search, Zap, AlertCircle, Sparkles, TrendingUp, Calendar, Eye, 
+  ThumbsUp, MessageSquare, ShieldAlert, ArrowUpRight, CheckCircle2, 
+  Clock, MessageSquareQuote, Flame, ArrowRight, Video, Target
+} from 'lucide-react';
 import { NicheVideoResult } from '../types';
 import { fetchNicheMarketResults } from '../services/api';
 
@@ -12,15 +16,16 @@ interface NicheExplorerProps {
   onOpenUpgradeModal: () => void;
   onSimulateZeroCredits: () => void;
   onResetCredits: () => void;
+  onAnalyzeSentiment: (videoId: string, videoUrl?: string) => void;
 }
 
 const TRENDING_TOPICS = [
   'AI Productivity Tools',
   'Micro SaaS Growth',
   'Mechanical Keyboards',
+  'MrBeast Challenge Clones',
   'Personal Finance Hacks',
-  'No-Code Automations',
-  'Health & Longevity'
+  'No-Code Automations'
 ];
 
 export const NicheExplorer: React.FC<NicheExplorerProps> = ({
@@ -32,6 +37,7 @@ export const NicheExplorer: React.FC<NicheExplorerProps> = ({
   onOpenUpgradeModal,
   onSimulateZeroCredits,
   onResetCredits,
+  onAnalyzeSentiment,
 }) => {
   const [searchInput, setSearchInput] = useState('AI Productivity Tools');
   const [currentQuery, setCurrentQuery] = useState('AI Productivity Tools');
@@ -46,7 +52,6 @@ export const NicheExplorer: React.FC<NicheExplorerProps> = ({
     // Check credit gating mechanism
     const allowed = onConsumeCredit();
     if (!allowed) {
-      // Trigger modal upgrade
       onOpenUpgradeModal();
       return;
     }
@@ -66,7 +71,6 @@ export const NicheExplorer: React.FC<NicheExplorerProps> = ({
   };
 
   useEffect(() => {
-    // Initial fetch
     performSearch(currentQuery);
   }, [mockMode]);
 
@@ -79,6 +83,30 @@ export const NicheExplorer: React.FC<NicheExplorerProps> = ({
     if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
     if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
     return n.toLocaleString();
+  };
+
+  const getEngagementBadge = (score: number) => {
+    if (score >= 6.0) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-emerald-500/95 text-white shadow-md border border-emerald-400/80 backdrop-blur-md">
+          <TrendingUp className="w-3.5 h-3.5 text-white" />
+          <span>High Engagement {score}%</span>
+        </span>
+      );
+    }
+    if (score >= 3.0) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-500/95 text-white shadow-md border border-amber-400/80 backdrop-blur-md">
+          <Sparkles className="w-3.5 h-3.5 text-white" />
+          <span>Moderate Engagement {score}%</span>
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-slate-800/90 text-white shadow-md border border-slate-700 backdrop-blur-md">
+        <span>Standard Engagement {score}%</span>
+      </span>
+    );
   };
 
   return (
@@ -95,7 +123,7 @@ export const NicheExplorer: React.FC<NicheExplorerProps> = ({
             Market & Topic Explorer
           </h1>
           <p className="mt-2 text-sm sm:text-base text-amber-100 font-medium">
-            Discover breakout niche videos, calculate true Audience Engagement Scores ( (Likes + Comments) / Views ), and scout untapped content opportunities.
+            Discover breakout competitor videos in your niche. Benchmark calculated Audience Engagement Scores ((Likes + Comments) / Views) and immediately send video candidates to Audience Pulse for deep sentiment extraction.
           </p>
 
           {/* Trending Suggestions */}
@@ -131,7 +159,7 @@ export const NicheExplorer: React.FC<NicheExplorerProps> = ({
             <div>
               <p className="font-black text-sm">Monthly Search Credits Depleted (0/20 Left)</p>
               <p className="text-xs text-rose-100 font-medium">
-                You have exhausted your included quota for the billing cycle. Upgrade to continue exploring topics.
+                You have exhausted your included search credits. Upgrade to continue exploring topics.
               </p>
             </div>
           </div>
@@ -186,7 +214,7 @@ export const NicheExplorer: React.FC<NicheExplorerProps> = ({
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search niche market or topic (e.g. AI tools, SaaS marketing, fitness apps)..."
+              placeholder="Search niche market or topic (e.g. AI tools, SaaS marketing, viral challenge)..."
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
@@ -213,7 +241,7 @@ export const NicheExplorer: React.FC<NicheExplorerProps> = ({
         </div>
       )}
 
-      {/* Results Grid: Cards showing Top 10 Search Results */}
+      {/* Results Grid: 2- or 3-Column Responsive Card Grid */}
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
@@ -222,11 +250,11 @@ export const NicheExplorer: React.FC<NicheExplorerProps> = ({
               <span className="text-amber-600">"{currentQuery}"</span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Ranked with verified thumbnails, publication dates, and computed Engagement Score badge ((Likes + Comments) / Views).
+              Ranked with verified thumbnails, duration overlays, computed Engagement Scores, and direct sentiment inspection.
             </p>
           </div>
-          <span className="text-xs font-bold text-slate-500 self-start sm:self-auto">
-            Showing {results.length} Videos
+          <span className="text-xs font-bold text-slate-500 self-start sm:self-auto bg-slate-100 px-3 py-1 rounded-lg">
+            Showing Top {results.length} Videos
           </span>
         </div>
 
@@ -235,10 +263,12 @@ export const NicheExplorer: React.FC<NicheExplorerProps> = ({
             <p className="font-bold">No results found for "{currentQuery}".</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+          /* Responsive 2- or 3-column card grid */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {results.map((item, idx) => {
-              const isHighEngagement = item.engagementScore >= 4.0;
-              const isModerateEngagement = item.engagementScore >= 2.0 && item.engagementScore < 4.0;
+              const videoId = item.id || `niche_${idx + 1}`;
+              const videoUrl = item.videoUrl || `https://www.youtube.com/watch?v=${videoId}`;
+              const duration = item.duration || '14:28';
 
               return (
                 <div
@@ -246,7 +276,7 @@ export const NicheExplorer: React.FC<NicheExplorerProps> = ({
                   className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
                 >
                   <div>
-                    {/* Thumbnail with Rank & Engagement Badge */}
+                    {/* 1. Video Thumbnail & Duration Overlay */}
                     <div className="relative aspect-video w-full overflow-hidden bg-slate-900">
                       <img
                         src={item.thumbnail}
@@ -254,68 +284,99 @@ export const NicheExplorer: React.FC<NicheExplorerProps> = ({
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       
-                      {/* Rank tag */}
-                      <span className="absolute top-3 left-3 px-2.5 py-1 rounded-xl bg-slate-900/80 backdrop-blur-md text-white text-xs font-black">
+                      {/* Rank tag top-left */}
+                      <span className="absolute top-3 left-3 px-2.5 py-1 rounded-xl bg-slate-900/80 backdrop-blur-md text-white text-xs font-black shadow-xs">
                         #{idx + 1}
                       </span>
 
-                      {/* Engagement Score Badge */}
+                      {/* Prominent Engagement Score Badge top-right */}
                       <div className="absolute top-3 right-3">
-                        <span
-                          title="Engagement Score = (Likes + Comments) / Views"
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black backdrop-blur-md shadow-md border ${
-                            isHighEngagement
-                              ? 'bg-emerald-600/90 text-white border-emerald-400'
-                              : isModerateEngagement
-                              ? 'bg-amber-600/90 text-white border-amber-400'
-                              : 'bg-slate-900/80 text-white border-slate-700'
-                          }`}
-                        >
-                          <TrendingUp className="w-3.5 h-3.5" />
-                          <span>{item.engagementScore}% Engagement</span>
+                        {getEngagementBadge(item.engagementScore)}
+                      </div>
+
+                      {/* Video Duration Badge Overlay bottom-right */}
+                      <div className="absolute bottom-2.5 right-2.5">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/85 backdrop-blur-xs text-white text-[11px] font-mono font-bold tracking-wider shadow-sm">
+                          <Clock className="w-3 h-3 text-slate-300" />
+                          <span>{duration}</span>
                         </span>
                       </div>
                     </div>
 
-                    {/* Content Details */}
-                    <div className="p-5 space-y-3">
-                      <h3 className="font-black text-base text-slate-900 line-clamp-2 leading-snug group-hover:text-amber-600 transition-colors">
+                    {/* Card Content & Details */}
+                    <div className="p-5 space-y-4">
+                      
+                      {/* Video Title */}
+                      <h3 className="font-black text-sm sm:text-base text-slate-900 line-clamp-2 leading-snug group-hover:text-amber-600 transition-colors">
                         {item.title}
                       </h3>
 
+                      {/* Channel Name & Publish Date */}
                       <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-                        <span className="font-bold text-slate-700">{item.channelTitle}</span>
-                        <span className="flex items-center gap-1 text-[11px]">
-                          <Calendar className="w-3 h-3 text-slate-400" />
+                        <span className="font-extrabold text-slate-800 truncate max-w-[170px]">
+                          {item.channelTitle}
+                        </span>
+                        <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 shrink-0">
+                          <Calendar className="w-3 h-3" />
                           {item.publishedAt}
                         </span>
                       </div>
 
-                      {/* Metrics Bar */}
+                      {/* 2. Key Stats: View count, publish date, like count, comment count */}
                       <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-slate-50 border border-slate-100 text-center">
                         <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase block">Estimated Views</span>
-                          <span className="font-black text-slate-800 text-xs sm:text-sm">{formatNumber(item.views)}</span>
+                          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide block">
+                            Views
+                          </span>
+                          <span className="font-black text-slate-900 text-xs sm:text-sm flex items-center justify-center gap-1 mt-0.5">
+                            <Eye className="w-3 h-3 text-amber-500" />
+                            {formatNumber(item.views)}
+                          </span>
                         </div>
                         <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase block">Likes</span>
-                          <span className="font-black text-slate-800 text-xs sm:text-sm">{formatNumber(item.likes)}</span>
+                          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide block">
+                            Likes
+                          </span>
+                          <span className="font-black text-slate-900 text-xs sm:text-sm flex items-center justify-center gap-1 mt-0.5">
+                            <ThumbsUp className="w-3 h-3 text-rose-500" />
+                            {formatNumber(item.likes)}
+                          </span>
                         </div>
                         <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase block">Comments</span>
-                          <span className="font-black text-slate-800 text-xs sm:text-sm">{formatNumber(item.comments)}</span>
+                          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide block">
+                            Comments
+                          </span>
+                          <span className="font-black text-slate-900 text-xs sm:text-sm flex items-center justify-center gap-1 mt-0.5">
+                            <MessageSquare className="w-3 h-3 text-violet-500" />
+                            {formatNumber(item.comments)}
+                          </span>
                         </div>
                       </div>
 
-                      {/* Formula callout badge */}
-                      <div className="text-[10px] font-mono text-slate-500 bg-amber-50/50 p-2 rounded-xl border border-amber-100 flex items-center justify-between">
-                        <span>Formula: (Likes + Comments) / Views</span>
-                        <span className="font-bold text-amber-900">
-                          ({formatNumber(item.likes)} + {formatNumber(item.comments)}) / {formatNumber(item.views)} = {item.engagementScore}%
+                      {/* Calculated Metric Formula Callout */}
+                      <div className="text-[10px] font-mono text-slate-500 bg-amber-50/70 px-2.5 py-1.5 rounded-xl border border-amber-200/80 flex items-center justify-between">
+                        <span>Score: (Likes + Comments) / Views</span>
+                        <span className="font-bold text-amber-950">
+                          {item.engagementScore}%
                         </span>
                       </div>
+
                     </div>
                   </div>
+
+                  {/* 3. Quick Action Button: "Analyze Sentiment" */}
+                  <div className="p-5 pt-0">
+                    <button
+                      type="button"
+                      onClick={() => onAnalyzeSentiment(videoId, videoUrl)}
+                      className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white text-xs font-bold transition-all shadow-sm shadow-purple-600/20 flex items-center justify-center gap-2 cursor-pointer group/btn"
+                    >
+                      <MessageSquareQuote className="w-4 h-4 text-violet-200" />
+                      <span>Analyze Sentiment</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
+
                 </div>
               );
             })}
